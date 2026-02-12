@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert } from "react-native";
 import ButtonComponent from "../components/ButtonComponent";
-import { deleteToken } from "../utils/storage";
+import { deleteToken, getToken } from "../utils/storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { fetchProducts } from "../services/api";
 import ProductItem from "../components/ProductItem";
+import { isTokenExpired } from "../utils/jwt";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Home">;
 
@@ -20,15 +22,33 @@ export default function HomeScreen({ navigation, route }: Props) {
 
   const load = useCallback(async (isRefresh = false) => {
     try {
-      if (isRefresh) {
-        setRefreshing(true);
-        setLoading(true);
+      const tokenStr = await getToken();
+      if (!tokenStr) {
+        navigation.replace("Login");
+        return;
       } else {
-        setLoading(true);
+        try {
+          if (isTokenExpired(tokenStr) == true) {
+            await deleteToken();
+            navigation.replace("Login");
+            return;
+          }
+          if (isRefresh) {
+            setRefreshing(true);
+            setLoading(true);
+          } else {
+            setLoading(true);
+          }
+          setError(null);
+          const resp = await fetchProducts(20, 0);
+          setData(resp.products || []);
+        } catch (e) {
+          // invalid token
+          await deleteToken();
+          navigation.replace("Login");
+          return;
+        }
       }
-      setError(null);
-      const resp = await fetchProducts(20, 0);
-      setData(resp.products || []);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to load data");
@@ -39,9 +59,19 @@ export default function HomeScreen({ navigation, route }: Props) {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Run token check and load after back navigation
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        if (!active) return;
+        await load();
+      })();
+      return () => {
+        active = false;
+      };
+    }, [load]),
+  );
 
   const onRefresh = useCallback(() => load(true), [load]);
 

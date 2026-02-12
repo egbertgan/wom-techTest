@@ -6,3 +6,14 @@ export const generateJWT = (email: string) => {
 
   return JSON.stringify(token);
 };
+
+export const isTokenExpired = (tokenString: string) => {
+  try {
+    const token = JSON.parse(tokenString);
+    const currentTime = Date.now();
+
+    return currentTime > token.exp;
+  } catch (e) {
+    return true;
+  }
+};

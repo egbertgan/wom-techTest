@@ -6,10 +6,12 @@ import { RootStackParamList } from "../navigation/AppNavigator";
 import { fetchProductById } from "../services/api";
 import ProductItem from "../components/ProductItem";
 import ButtonComponent from "../components/ButtonComponent";
+import { getToken, deleteToken } from "../utils/storage";
+import { isTokenExpired } from "../utils/jwt";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Detail">;
 
-export default function DetailScreen({ route }: Props) {
+export default function DetailScreen({ route, navigation }: Props) {
   const productParam = route.params?.product;
   const [product, setProduct] = useState<any | null>(productParam ?? null);
   const [loading, setLoading] = useState(false);
@@ -17,48 +19,84 @@ export default function DetailScreen({ route }: Props) {
 
   useEffect(() => {
     let mounted = true;
-    const load = async () => {
-      if (productParam && productParam.id) return; // already have data
-      if (!productParam?.id) return;
+    const init = async () => {
+      // check token exists and not expired
       try {
-        setLoading(true);
-        const resp = await fetchProductById(productParam.id);
-        if (mounted) setProduct(resp);
-      } catch (err: any) {
-        console.error(err);
-        if (mounted) {
-          setError(err.message || "Failed to load detail");
-          Alert.alert("Error", err.message || "Failed to load detail");
+        const tokenStr = await getToken();
+        if (!tokenStr) {
+          navigation.replace("Login");
+          return;
         }
-      } finally {
-        if (mounted) setLoading(false);
+
+        if (isTokenExpired(tokenStr) == true) {
+          await deleteToken();
+          navigation.replace("Login");
+          return;
+        }
+      } catch (err) {
+        console.error("Auth check failed", err);
+        navigation.replace("Login");
+        return;
       }
+
+      const load = async () => {
+        if (productParam && productParam.id) return; // already have data
+        if (!productParam?.id) return;
+        try {
+          setLoading(true);
+          const resp = await fetchProductById(productParam.id);
+          if (mounted) setProduct(resp);
+        } catch (err: any) {
+          console.error(err);
+          if (mounted) {
+            setError(err.message || "Failed to load detail");
+            Alert.alert("Error", err.message || "Failed to load detail");
+          }
+        } finally {
+          if (mounted) setLoading(false);
+        }
+      };
+
+      await load();
     };
-    load();
-  }, [productParam]);
+    init();
+    return () => {
+      mounted = false;
+    };
+  }, [productParam, navigation]);
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
-        <View style={styles.gallery}>
-          {product.images && product.images.length > 0 ? (
-            <Image source={{ uri: product.images[0] }} resizeMode="contain" style={styles.hero} />
-          ) : null}
-        </View>
-
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Text style={styles.title}>{product.title}</Text>
-            <Text style={styles.price}>${product.price}</Text>
+        {loading ? (
+          <ActivityIndicator size="large" />
+        ) : error ? (
+          <View style={styles.center}>
+            <Text style={{ color: "red" }}>{error}</Text>
           </View>
+        ) : (
+          <>
+            <View style={styles.gallery}>
+              {product.images && product.images.length > 0 ? (
+                <Image source={{ uri: product.images[0] }} resizeMode="contain" style={styles.hero} />
+              ) : null}
+            </View>
 
-          <View>
-            <Text style={styles.meta}>Brand: {product.brand}</Text>
-            <Text style={styles.meta}>Category: {product.category}</Text>
-          </View>
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <Text style={styles.title}>{product.title}</Text>
+                <Text style={styles.price}>${product.price}</Text>
+              </View>
 
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.desc}>{product.description}</Text>
-        </View>
+              <View>
+                <Text style={styles.meta}>Brand: {product.brand}</Text>
+                <Text style={styles.meta}>Category: {product.category}</Text>
+              </View>
+
+              <Text style={styles.sectionTitle}>Description</Text>
+              <Text style={styles.desc}>{product.description}</Text>
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
