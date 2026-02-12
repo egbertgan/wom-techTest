@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert } from "react-native";
+import ButtonComponent from "../components/ButtonComponent";
+import { deleteToken } from "../utils/storage";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { fetchProducts } from "../services/api";
@@ -19,6 +22,7 @@ export default function HomeScreen({ navigation, route }: Props) {
     try {
       if (isRefresh) {
         setRefreshing(true);
+        setLoading(true);
       } else {
         setLoading(true);
       }
@@ -45,34 +49,60 @@ export default function HomeScreen({ navigation, route }: Props) {
     <ProductItem item={item} onPress={() => navigation.navigate("Detail", { product: item })} />
   );
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.email}>Logged in as: {email}</Text>
+  const handleLogout = async () => {
+    try {
+      await deleteToken();
+      navigation.replace("Login");
+    } catch (err) {
+      console.error("Logout failed", err);
+      Alert.alert("Error", "Logout failed");
+    }
+  };
 
-      {loading && data.length === 0 ? (
-        <ActivityIndicator size="large" />
-      ) : error && data.length === 0 ? (
-        <View style={styles.center}>
-          <Text style={{ color: "red" }}>{error}</Text>
+  return (
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.email}>Logged in as: {email}</Text>
+          <ButtonComponent title="Logout" onPress={handleLogout} variant="logout" />
         </View>
-      ) : (
-        <FlatList
-          data={data}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={renderItem}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          contentContainerStyle={{ paddingBottom: 24 }}
-        />
-      )}
-    </View>
+
+        {loading ? (
+          <ActivityIndicator size="large" />
+        ) : error && data.length === 0 ? (
+          <View style={styles.center}>
+            <Text style={{ color: "red" }}>{error}</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={data}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={renderItem}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            contentContainerStyle={{ paddingBottom: 24, paddingTop: 8 }}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+  },
   container: {
     flex: 1,
     padding: 12,
+    paddingTop: 16,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
   email: {
     textAlign: "center",

@@ -8,10 +8,13 @@ type Props = {
 
 export default function ProductItem({ item, onPress }: Props) {
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       {item.thumbnail ? <Image source={{ uri: item.thumbnail }} style={styles.image} /> : null}
       <View style={styles.info}>
         <Text style={styles.title}>{item.title}</Text>
+        <Text numberOfLines={2} style={styles.desc}>
+          {item.description}
+        </Text>
         <Text style={styles.price}>${item.price}</Text>
       </View>
     </TouchableOpacity>
@@ -19,12 +22,18 @@ export default function ProductItem({ item, onPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
     flexDirection: "row",
     padding: 12,
-    borderBottomWidth: 1,
-    borderColor: "#eee",
+    marginVertical: 8,
+    marginHorizontal: 4,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   image: {
     width: 64,
@@ -38,6 +47,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  desc: {
+    fontSize: 13,
+    color: "#475569",
+    marginTop: 4,
   },
   price: {
     marginTop: 4,
