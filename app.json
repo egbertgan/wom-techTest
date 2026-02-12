@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "wom-techTest",
+    "slug": "wom-techTest",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "womtechtest",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.egbertgan.womtechtest"
+    },
+    "android": {
+      "package": "com.egbertgan.womtechtest",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": ["expo-secure-store", "expo-web-browser"],
+    "extra": {
+      "eas": {
+        "projectId": "3357503a-1f40-45c0-8498-711b2b08ace6"
+      }
+    },
+    "owner": "egbertgan"
+  }
+}
+
