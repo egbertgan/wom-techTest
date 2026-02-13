@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, Alert } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, Alert, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
@@ -8,6 +8,7 @@ import ProductItem from "../components/ProductItem";
 import ButtonComponent from "../components/ButtonComponent";
 import { getToken, deleteToken } from "../utils/storage";
 import { isTokenExpired } from "../utils/jwt";
+import { useTheme } from "../theme/ThemeContext";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Detail">;
 
@@ -16,6 +17,7 @@ export default function DetailScreen({ route, navigation }: Props) {
   const [product, setProduct] = useState<any | null>(productParam ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { colors, toggle, isDark } = useTheme();
 
   useEffect(() => {
     let mounted = true;
@@ -65,8 +67,16 @@ export default function DetailScreen({ route, navigation }: Props) {
     };
   }, [productParam, navigation]);
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top"]}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
+        <View style={{ paddingHorizontal: 12, paddingTop: 8, alignItems: "flex-end" }}>
+          <Switch
+            value={isDark}
+            onValueChange={toggle}
+            trackColor={{ false: "#767577", true: colors.primary }}
+            thumbColor={isDark ? "#f4f3f4" : "#f4f3f4"}
+          />
+        </View>
         {loading ? (
           <ActivityIndicator size="large" />
         ) : error ? (
@@ -81,19 +91,19 @@ export default function DetailScreen({ route, navigation }: Props) {
               ) : null}
             </View>
 
-            <View style={styles.infoCard}>
+            <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.infoRow}>
-                <Text style={styles.title}>{product.title}</Text>
-                <Text style={styles.price}>${product.price}</Text>
+                <Text style={[styles.title, { color: colors.text }]}>{product.title}</Text>
+                <Text style={[styles.price, { color: colors.primary }]}>${product.price}</Text>
               </View>
 
               <View>
-                <Text style={styles.meta}>Brand: {product.brand}</Text>
-                <Text style={styles.meta}>Category: {product.category}</Text>
+                <Text style={[styles.meta, { color: colors.muted }]}>Brand: {product.brand}</Text>
+                <Text style={[styles.meta, { color: colors.muted }]}>Category: {product.category}</Text>
               </View>
 
-              <Text style={styles.sectionTitle}>Description</Text>
-              <Text style={styles.desc}>{product.description}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
+              <Text style={[styles.desc, { color: colors.muted }]}>{product.description}</Text>
             </View>
           </>
         )}
@@ -105,7 +115,6 @@ export default function DetailScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
   },
   container: {
     flex: 1,

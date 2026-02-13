@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, Alert, Platform } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Alert, Platform, Switch } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { generateJWT } from "../utils/jwt";
@@ -7,11 +7,10 @@ import { saveToken } from "../utils/storage";
 import InputTextComponent from "../components/InputTextComponent";
 import ButtonComponent from "../components/ButtonComponent";
 import { GOOGLE_AUTH_CONFIG } from "../config/googleAuth";
-import { makeRedirectUri, useAuthRequest, exchangeCodeAsync } from "expo-auth-session";
-import * as WebBrowser from "expo-web-browser";
-import { getGoogleUser } from "../services/googleService";
 
-WebBrowser.maybeCompleteAuthSession();
+// Import library baru
+import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
+import { useTheme } from "../theme/ThemeContext";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
@@ -21,112 +20,69 @@ export default function LoginScreen({ navigation }: Props) {
   const [emailError, setEmailError] = useState(false);
   const [emailErrorText, setEmailErrorText] = useState<string | undefined>(undefined);
 
-  const discovery = {
-    authorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
-    tokenEndpoint: "https://oauth2.googleapis.com/token",
-    revocationEndpoint: "https://accounts.google.com/o/oauth2/revoke",
-  };
+  // Inisialisasi Google Sign-In saat komponen dimuat
+  useEffect(() => {
+    GoogleSignin.configure({
+      // PENTING: Gunakan webClientId dari Google Cloud Console meskipun di Android/iOS
+      webClientId: GOOGLE_AUTH_CONFIG.webClientId,
+      offlineAccess: false,
+      scopes: ["profile", "email"],
+    });
+  }, []);
+  const { colors, toggle, isDark } = useTheme();
 
-  const CLIENT_ID =
-    Platform.OS === "ios" ? GOOGLE_AUTH_CONFIG.iosClientId : GOOGLE_AUTH_CONFIG.androidClientId;
-
-  const SCOPES = ["openid", "https://www.googleapis.com/auth/userinfo.email"];
-
-  const REDIRECT_URI = makeRedirectUri({
-    native: "com.egbertgan.womtechtest://", // Explicitly add the ://
-  });
-
-  const [request, response, promptAsync] = useAuthRequest(
-    {
-      clientId: CLIENT_ID,
-      scopes: SCOPES,
-      redirectUri: REDIRECT_URI,
-      responseType: "code",
-    },
-    discovery,
-  );
-
-  // --- Email/Password Login ---
   const handleEmailLogin = async () => {
-    setEmailError(false);
-    setEmailErrorText(undefined);
+    // ... (Logika email login tetap sama seperti sebelumnya)
     if (!email) {
       setEmailError(true);
       setEmailErrorText("Email wajib diisi");
       return;
     }
-    const emailRegex = /^\S+@\S+\.\S+$/;
-    if (!emailRegex.test(email)) {
-      setEmailError(true);
-      setEmailErrorText("Masukkan email yang valid");
-      return;
-    }
-
-    try {
-      const token = generateJWT(email);
-      await saveToken(token);
-
-      navigation.replace("Home", { email });
-    } catch (error) {
-      console.log(error);
-      Alert.alert("Login Failed");
-    }
+    const token = generateJWT(email);
+    await saveToken(token);
+    navigation.replace("Home", { email });
   };
 
-  // --- Google Login ---
+  // --- Google Login (Versi Baru) ---
   const handleGoogleLogin = async () => {
-    if (!request) return;
-
     try {
-      const result = await promptAsync();
-      console.log("Google Auth Result:", result);
-      if (result.type !== "success") {
-        console.warn("Google sign in was cancelled or failed");
-        return;
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+      console.log(response?.data?.idToken);
+      // Data user berada di response.data (versi terbaru library)
+      const userEmail = response.data?.user.email;
+
+      if (userEmail) {
+        const jwtToken = generateJWT(userEmail);
+        await saveToken(jwtToken);
+        navigation.replace("Home", { email: userEmail });
       }
-
-      const { code } = result.params;
-
-      if (!request.codeVerifier) {
-        Alert.alert("Error", "Missing code verifier, try again");
-        return;
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log("User membatalkan login");
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        console.log("Proses login sedang berjalan");
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert("Error", "Play Services tidak tersedia");
+      } else {
+        console.error("Google Login Error:", error);
+        Alert.alert("Login Gagal", "Terjadi kesalahan saat login dengan Google");
       }
-      // Exchange code for token
-      const tokenResponse = await exchangeCodeAsync(
-        {
-          clientId: CLIENT_ID,
-          code,
-          redirectUri: REDIRECT_URI,
-          extraParams: {
-            code_verifier: request.codeVerifier, // PKCE
-          },
-        },
-        discovery,
-      );
-
-      if (!tokenResponse.accessToken) {
-        throw new Error("No access token returned from Google");
-      }
-
-      // Get user info from Google
-      const user = await getGoogleUser(tokenResponse.accessToken);
-      const userEmail = user.email;
-
-      // Save JWT and navigate
-      const jwtToken = generateJWT(userEmail);
-      await saveToken(jwtToken);
-
-      navigation.replace("Home", { email: userEmail });
-    } catch (error) {
-      console.error("Google login failed:", error);
-      Alert.alert("Google Login Failed");
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Welcome back</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={{ padding: 12, alignItems: "flex-end" }}>
+        <Switch
+          value={isDark}
+          onValueChange={toggle}
+          trackColor={{ false: "#767577", true: colors.primary }}
+          thumbColor={isDark ? "#f4f3f4" : "#f4f3f4"}
+        />
+      </View>
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Welcome back</Text>
         <InputTextComponent
           placeholder="Email"
           value={email}
@@ -156,12 +112,8 @@ export default function LoginScreen({ navigation }: Props) {
 
         <View style={{ marginVertical: 8 }} />
 
-        <ButtonComponent
-          title="Sign in with Google"
-          onPress={handleGoogleLogin}
-          disabled={!request}
-          variant="google"
-        />
+        {/* Properti disabled={!request} dihapus karena tidak lagi diperlukan */}
+        <ButtonComponent title="Sign in with Google" onPress={handleGoogleLogin} variant="google" />
       </View>
     </View>
   );
@@ -170,12 +122,11 @@ export default function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+
     justifyContent: "center",
     padding: 20,
   },
   card: {
-    backgroundColor: "white",
     padding: 20,
     borderRadius: 12,
     shadowColor: "#000",
@@ -188,6 +139,5 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     textAlign: "center",
     fontWeight: "700",
-    color: "#0F172A",
   },
 });

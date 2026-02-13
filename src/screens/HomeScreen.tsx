@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert } from "react-native";
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, Switch } from "react-native";
 import ButtonComponent from "../components/ButtonComponent";
 import { deleteToken, getToken } from "../utils/storage";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,11 +9,13 @@ import { RootStackParamList } from "../navigation/AppNavigator";
 import { fetchProducts } from "../services/api";
 import ProductItem from "../components/ProductItem";
 import { isTokenExpired } from "../utils/jwt";
+import { useTheme } from "../theme/ThemeContext";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Home">;
 
 export default function HomeScreen({ navigation, route }: Props) {
   const email = route.params?.email ?? "";
+  const { colors, toggle, isDark } = useTheme();
 
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -90,15 +92,24 @@ export default function HomeScreen({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top"]}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.email}>Logged in as: {email}</Text>
-          <ButtonComponent title="Logout" onPress={handleLogout} variant="logout" />
+          <Text style={[styles.email, { color: colors.text }]}>Logged in as: {email}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Switch
+              value={isDark}
+              onValueChange={toggle}
+              trackColor={{ false: "#767577", true: colors.primary }}
+              thumbColor={isDark ? "#f4f3f4" : "#f4f3f4"}
+              style={{ marginRight: 8 }}
+            />
+            <ButtonComponent title="Logout" onPress={handleLogout} variant="logout" />
+          </View>
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color={colors.primary} />
         ) : error && data.length === 0 ? (
           <View style={styles.center}>
             <Text style={{ color: "red" }}>{error}</Text>
@@ -121,7 +132,6 @@ export default function HomeScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
   },
   container: {
     flex: 1,

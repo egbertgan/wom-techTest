@@ -5,9 +5,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "womtechtest",
+    "scheme": "com.egbertgan.womtechtest",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -29,7 +29,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-secure-store", "expo-web-browser"],
+    "plugins": [
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.242841241051-47bknfhn0dopj62423fmbluhe1chqapq"
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "3357503a-1f40-45c0-8498-711b2b08ace6"
