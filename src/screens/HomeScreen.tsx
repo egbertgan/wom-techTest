@@ -94,16 +94,25 @@ export default function HomeScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top"]}>
       <View style={styles.container}>
+        <View style={{ paddingHorizontal: 12, paddingTop: 8, alignItems: "flex-end" }}>
+          <Switch
+            value={isDark}
+            onValueChange={toggle}
+            trackColor={{ false: "#767577", true: colors.primary }}
+            thumbColor={isDark ? "#f4f3f4" : "#f4f3f4"}
+            style={{ marginBottom: 8 }}
+          />
+        </View>
+
         <View style={styles.header}>
-          <Text style={[styles.email, { color: colors.text }]}>Logged in as: {email}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Switch
-              value={isDark}
-              onValueChange={toggle}
-              trackColor={{ false: "#767577", true: colors.primary }}
-              thumbColor={isDark ? "#f4f3f4" : "#f4f3f4"}
-              style={{ marginRight: 8 }}
-            />
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={[styles.email, { color: colors.text, flex: 1, marginRight: 8 }]}
+          >
+            {email}
+          </Text>
+          <View style={{ flexShrink: 0 }}>
             <ButtonComponent title="Logout" onPress={handleLogout} variant="logout" />
           </View>
         </View>

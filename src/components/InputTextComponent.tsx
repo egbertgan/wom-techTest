@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   toggle: {
     position: "absolute",
     right: 10,
-    top: 10,
+    top: 18,
   },
   toggleText: {
     fontSize: 18,

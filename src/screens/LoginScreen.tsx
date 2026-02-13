@@ -107,10 +107,11 @@ export default function LoginScreen({ navigation }: Props) {
           autoCorrect={false}
           textContentType="password"
         />
+        <View style={{ marginVertical: 15 }} />
 
         <ButtonComponent title="Login" onPress={handleEmailLogin} variant="primary" />
 
-        <View style={{ marginVertical: 8 }} />
+        <View style={{ marginVertical: 5 }} />
 
         {/* Properti disabled={!request} dihapus karena tidak lagi diperlukan */}
         <ButtonComponent title="Sign in with Google" onPress={handleGoogleLogin} variant="google" />
