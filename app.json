@@ -35,7 +35,8 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.242841241051-47bknfhn0dopj62423fmbluhe1chqapq"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {
@@ -45,4 +46,3 @@
     "owner": "egbertgan"
   }
 }
-
